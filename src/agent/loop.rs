@@ -1220,6 +1220,7 @@ impl AgentLoop {
 
             // Clone inbound metadata for routing propagation in tool `for_user` messages.
             let inbound_metadata = msg.metadata.clone();
+            let inbound_sender_id = msg.sender_id.clone();
 
             let tool_futures: Vec<_> = response
                 .tool_calls
@@ -1245,6 +1246,7 @@ impl AgentLoop {
                     let agent_mode = current_agent_mode;
                     let bus_for_tools = Arc::clone(&self.bus);
                     let inbound_meta = inbound_metadata.clone();
+                    let inbound_sender_id = inbound_sender_id.clone();
 
                     async move {
                         let args: serde_json::Value = match serde_json::from_str(&raw_args) {
@@ -1379,12 +1381,25 @@ impl AgentLoop {
                                     ctx.chat_id.as_deref().unwrap_or(""),
                                     user_msg,
                                 );
-                                // Propagate routing metadata (e.g. telegram_thread_id)
+                                // Propagate routing metadata (Telegram + Webex)
                                 if let Some(tid) = inbound_meta.get("telegram_thread_id") {
                                     outbound
                                         .metadata
                                         .insert("telegram_thread_id".to_string(), tid.clone());
                                 }
+                                if let Some(room_type) = inbound_meta.get("room_type") {
+                                    outbound
+                                        .metadata
+                                        .insert("room_type".to_string(), room_type.clone());
+                                }
+                                if let Some(person_email) = inbound_meta.get("person_email") {
+                                    outbound
+                                        .metadata
+                                        .insert("sender_email".to_string(), person_email.clone());
+                                }
+                                outbound
+                                    .metadata
+                                    .insert("sender_id".to_string(), inbound_sender_id.clone());
                                 let _ = bus_for_tools.publish_outbound(outbound).await;
                             }
                         }
@@ -1880,6 +1895,7 @@ impl AgentLoop {
 
             // Clone inbound metadata for routing propagation in tool `for_user` messages.
             let inbound_metadata_stream = msg.metadata.clone();
+            let inbound_sender_id_stream = msg.sender_id.clone();
 
             let tool_futures: Vec<_> = response
                 .tool_calls
@@ -1905,6 +1921,7 @@ impl AgentLoop {
                     let agent_mode = current_agent_mode_stream;
                     let bus_for_tools = Arc::clone(&self.bus);
                     let inbound_meta = inbound_metadata_stream.clone();
+                    let inbound_sender_id = inbound_sender_id_stream.clone();
 
                     async move {
                         let args: serde_json::Value = match serde_json::from_str(&raw_args) {
@@ -2029,12 +2046,25 @@ impl AgentLoop {
                                     ctx.chat_id.as_deref().unwrap_or(""),
                                     user_msg,
                                 );
-                                // Propagate routing metadata (e.g. telegram_thread_id)
+                                // Propagate routing metadata (Telegram + Webex)
                                 if let Some(tid) = inbound_meta.get("telegram_thread_id") {
                                     outbound
                                         .metadata
                                         .insert("telegram_thread_id".to_string(), tid.clone());
                                 }
+                                if let Some(room_type) = inbound_meta.get("room_type") {
+                                    outbound
+                                        .metadata
+                                        .insert("room_type".to_string(), room_type.clone());
+                                }
+                                if let Some(person_email) = inbound_meta.get("person_email") {
+                                    outbound
+                                        .metadata
+                                        .insert("sender_email".to_string(), person_email.clone());
+                                }
+                                outbound
+                                    .metadata
+                                    .insert("sender_id".to_string(), inbound_sender_id.clone());
                                 let _ = bus_for_tools.publish_outbound(outbound).await;
                             }
                         }
